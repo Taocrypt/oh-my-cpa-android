@@ -1,0 +1,7 @@
+build/
+*.p12
+*.jks
+*.keystore
+build.local.sh
+local.properties
+.DS_Store
