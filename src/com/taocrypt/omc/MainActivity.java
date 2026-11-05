@@ -78,7 +78,7 @@ public final class MainActivity extends Activity {
     public static final String ACTION_UPDATES = "com.taocrypt.omc.UPDATES";
     public static final String ACTION_SHELL_INSTALL = "com.taocrypt.omc.SHELL_INSTALL";
     public static final String EXTRA_APK = "apk";
-    static final String APP_VERSION = "0.4.0";
+    static final String APP_VERSION = "0.4.1";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService bg = Executors.newCachedThreadPool();
@@ -404,9 +404,8 @@ public final class MainActivity extends Activity {
         setupTitle.setGravity(Gravity.CENTER);
         col.addView(setupTitle, k.lpm(Kit.MATCH, Kit.WRAP, 28, 8));
 
-        introText = k.text("首次启动会从 GitHub Releases 下载两个 linux arm64 程序：CLIProxyAPI "
-                + Installer.CPA.version + "（约 21 MB）和 oh-my-cpa " + Installer.OMC.version
-                + "（约 24 MB），校验 SHA-256 后解压到应用私有目录。建议连 Wi-Fi。", 13, pal.muted);
+        introText = k.text("首次启动会从 GitHub Releases 下载两个 linux arm64 程序的最新版：CLIProxyAPI（约 21 MB）和 oh-my-cpa（约 24 MB），"
+                + "按官方 checksums.txt 校验 SHA-256 后解压到应用私有目录；查不到最新版时用内置的 v" + Installer.CPA.version + " / v" + Installer.OMC.version + "。建议连 Wi-Fi。", 13, pal.muted);
         introText.setGravity(Gravity.CENTER);
         introText.setLineSpacing(k.dp(3), 1f);
         col.addView(introText, k.lpm(Kit.MATCH, Kit.WRAP, 0, 24));
@@ -1340,7 +1339,7 @@ public final class MainActivity extends Activity {
         String cpaV = Prefs.installed(this, Installer.CPA.name), omcV = Prefs.installed(this, Installer.OMC.name);
         LinearLayout a = k.card();
         k.cardTitle(a, "CLIProxyAPI");
-        k.kv(a, "版本", (cpaV.isEmpty() ? "未安装" : "v" + cpaV) + (cpaV.equals(Installer.CPA.version) ? "（内置固定版本）" : "（内置 v" + Installer.CPA.version + "）"));
+        k.kv(a, "版本", (cpaV.isEmpty() ? "未安装" : "v" + cpaV) + (cpaV.equals(Installer.CPA.version) ? "（与内置版本相同）" : "（内置回退 v" + Installer.CPA.version + "）"));
         k.kv(a, "文件", Installer.bin(this, Installer.CPA).getAbsolutePath() + "  " + size(Installer.bin(this, Installer.CPA)));
         k.kv(a, "配置", Stack.cpaConfig(this).getAbsolutePath());
         k.kv(a, "API", "http://" + Stack.bindHost(this) + ":" + Prefs.cpaPort(this) + "/v1");
@@ -1356,7 +1355,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout b = k.card();
         k.cardTitle(b, "oh-my-cpa");
-        k.kv(b, "版本", (omcV.isEmpty() ? "未安装" : "v" + omcV) + (omcV.equals(Installer.OMC.version) ? "（内置固定版本）" : "（内置 v" + Installer.OMC.version + "）"));
+        k.kv(b, "版本", (omcV.isEmpty() ? "未安装" : "v" + omcV) + (omcV.equals(Installer.OMC.version) ? "（与内置版本相同）" : "（内置回退 v" + Installer.OMC.version + "）"));
         k.kv(b, "文件", Installer.bin(this, Installer.OMC).getAbsolutePath() + "  " + size(Installer.bin(this, Installer.OMC)));
         k.kv(b, "数据", new File(getFilesDir(), "omc/data").getAbsolutePath());
         k.kv(b, "控制台", "http://" + Stack.bindHost(this) + ":" + Prefs.omcPort(this) + "/");

@@ -99,7 +99,28 @@ public final class Installer {
         return m.isEmpty() || !url.startsWith("https://github.com/") ? url : m + url;
     }
 
-    private static void install(Context c, Pkg p, int idx, int total) throws IOException {
+    /** First launch takes the newest upstream release (verified by its checksums.txt); the pinned one is the fallback. */
+    private static void install(Context c, Pkg pinned, int idx, int total) throws IOException {
+        stage = "查询最新版本 (" + idx + "/" + total + ") " + pinned.name;
+        percent = -1;
+        detail = "";
+        Pkg p = pinned;
+        boolean verified = false;
+        try {
+            Updater.Release r = Updater.latest(c, pinned);
+            if (r.version.equals(pinned.version) && !r.sha256.equals(pinned.sha256))
+                throw new IOException("checksums.txt 与内置校验值不一致：" + r.archive);
+            p = new Pkg(pinned.name, r.version, r.base(), r.archive, r.sha256, pinned.member);
+            verified = true;
+            Stack.appLog(c, "first launch: " + pinned.name + " latest " + r.version + " (pinned " + pinned.version + ")");
+        } catch (IOException e) {
+            if (e.getMessage() != null && e.getMessage().contains("不一致")) throw e;
+            Stack.appLog(c, "latest " + pinned.name + " unavailable (" + e.getMessage() + "); falling back to pinned " + pinned.version);
+        }
+        installPkg(c, p, idx, total, verified);
+    }
+
+    private static void installPkg(Context c, Pkg p, int idx, int total, boolean verified) throws IOException {
         String label = "(" + idx + "/" + total + ") " + p.name + " " + p.version;
         File dl = Stack.dir(c, "dl");
         // 1. checksums.txt (small; the pinned hash still decides if it cannot be read)
@@ -107,7 +128,7 @@ public final class Installer {
         percent = -1;
         detail = "";
         String listed = null;
-        try {
+        if (!verified) try {
             String sums = new String(get(wrap(c, p.url("checksums.txt")), 1 << 20), "UTF-8");
             for (String line : sums.split("\n")) {
                 String[] f = line.trim().split("\\s+");

@@ -2,6 +2,10 @@
 
 Oh My CPA 安卓外壳（com.taocrypt.omc）。内核 = CLIProxyAPI + oh-my-cpa 两个程序，外壳 = 这个安卓应用。
 
+## 0.4.1（2026-11-05）
+
+- 首次启动改为下载 CLIProxyAPI 和 oh-my-cpa 的最新版，按官方 checksums.txt 校验 SHA-256；查不到最新版时回退到内置的 v8.0.51 / v0.3.19。
+
 ## 0.4.0（2026-11-05）
 
 ### 新增
