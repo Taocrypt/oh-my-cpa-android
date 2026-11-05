@@ -1,6 +1,7 @@
 /* Oh My CPA (Android) - the bridge between the console page and the native shell.
  * 1. reports the console's live theme tokens so the native panel, floating button and system
  *    bars wear the same palette (including a custom palette picked in OMC 设置 → 外观);
+ * 3. relabels the header menu's GitHub link and adds this Android shell's repository below it;
  * 2. optionally adds an "App 设置" entry to the console's own navigation that opens the native panel.
  * Everything is guarded: if the console's markup changes, the entry simply does not appear and
  * the floating button stays the way in. Nothing here touches the console's own state. */
@@ -58,11 +59,51 @@
       }
     } catch (e) {}
   }
+  // Header tools menu: the console's "打开项目 GitHub 仓库" points at upstream oh-my-cpa only.
+  // Relabel it and add the Android shell's own repository right below it.
+  var UPSTREAM = 'https://github.com/WizisCool/oh-my-cpa', SHELL_REPO = 'https://github.com/Taocrypt/oh-my-cpa-android';
+  function setLabel(a, text) {
+    var w = document.createTreeWalker(a, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      if (n.parentNode && n.parentNode.closest && n.parentNode.closest('.header-star-count')) continue;
+      if (n.nodeValue.trim()) { if (n.nodeValue !== text) n.nodeValue = text; return; }
+    }
+  }
+  function ensureRepo() {
+    try {
+      var en = /^en/i.test(document.documentElement.lang || '');
+      var up = en ? 'oh-my-cpa console on GitHub' : 'oh-my-cpa 控制台仓库';
+      var mine = en ? 'Oh My CPA Android on GitHub' : 'Oh My CPA 安卓版仓库';
+      var links = document.querySelectorAll('.action-menu-content a[href^="' + UPSTREAM + '"]');
+      for (var i = 0; i < links.length; i++) {
+        var a = links[i];
+        if (a.getAttribute('href').replace(/\/$/, '') !== UPSTREAM) continue;
+        setLabel(a, up);
+        var next = a.nextElementSibling;
+        if (next && next.classList.contains('omc-shell-repo')) { setLabel(next, mine); continue; }
+        var b = a.cloneNode(true);
+        b.classList.add('omc-shell-repo');
+        b.setAttribute('href', SHELL_REPO);
+        var star = b.querySelector('.header-star-count');
+        if (star) star.parentNode.removeChild(star);
+        var ic = b.querySelector('.ant-btn-icon');
+        if (ic) ic.innerHTML = ICON;
+        setLabel(b, mine);
+        a.parentNode.insertBefore(b, a.nextSibling);
+      }
+      var wide = document.querySelectorAll('.app-header-actions a[href="' + UPSTREAM + '"]');
+      for (var j = 0; j < wide.length; j++) {
+        if (wide[j].closest('.action-menu-content')) continue;
+        wide[j].setAttribute('aria-label', up);
+        wide[j].setAttribute('title', up);
+      }
+    } catch (e) {}
+  }
   var pending = false;
   function tick() {
     if (pending) return;
     pending = true;
-    setTimeout(function () { pending = false; report(); ensureEntry(); }, 150);
+    setTimeout(function () { pending = false; report(); ensureEntry(); ensureRepo(); }, 150);
   }
   try {
     new MutationObserver(tick).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme-mode', 'style', 'class'] });

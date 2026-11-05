@@ -78,7 +78,7 @@ public final class MainActivity extends Activity {
     public static final String ACTION_UPDATES = "com.taocrypt.omc.UPDATES";
     public static final String ACTION_SHELL_INSTALL = "com.taocrypt.omc.SHELL_INSTALL";
     public static final String EXTRA_APK = "apk";
-    static final String APP_VERSION = "0.4.2";
+    static final String APP_VERSION = "0.4.3";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService bg = Executors.newCachedThreadPool();

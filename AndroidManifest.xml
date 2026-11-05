@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="8"
-    android:versionName="0.4.2"
+    android:versionCode="9"
+    android:versionName="0.4.3"
     package="com.taocrypt.omc">
     <!-- targetSdk 28 on purpose: Android only forbids exec() from the app's own writable
          files for targetSdk 29+, and the Go binaries are downloaded at first launch. -->
