@@ -46,30 +46,61 @@ final class Updater {
         return p == Installer.CPA ? "CLIProxyAPI_" + v + "_linux_aarch64_no-plugin.tar.gz" : "oh-my-cpa_" + v + "_linux_arm64.tar.gz";
     }
 
-    /** The newest release and its verified checksum entry. Blocking. */
+    /**
+     * The newest release that already has our archive and checksums.txt, with its verified checksum
+     * entry. Blocking. Upstream publishes the release first and CI uploads assets minutes later, so a
+     * brand-new tag without assets is skipped in favour of the previous complete one.
+     */
     static Release latest(Context c, Installer.Pkg p) throws IOException {
-        String version = null, archive = null;
+        IOException apiErr;
         try {
-            JSONObject o = new JSONObject(new String(Installer.get("https://api.github.com/repos/" + repo(p) + "/releases/latest", 2 << 20), "UTF-8"));
-            version = o.getString("tag_name").replaceFirst("^v", "");
-            JSONArray a = o.optJSONArray("assets");
-            if (a != null) for (int i = 0; i < a.length(); i++) {
-                String n = a.getJSONObject(i).optString("name");
-                if (wanted(p, n)) { archive = n; break; }
+            JSONArray list = new JSONArray(new String(Installer.get("https://api.github.com/repos/" + repo(p) + "/releases?per_page=10", 4 << 20), "UTF-8"));
+            String skipped = null;
+            for (int i = 0; i < list.length(); i++) {
+                JSONObject o = list.getJSONObject(i);
+                if (o.optBoolean("draft") || o.optBoolean("prerelease")) continue;
+                String version = o.getString("tag_name").replaceFirst("^v", ""), archive = null;
+                boolean sums = false;
+                JSONArray a = o.optJSONArray("assets");
+                if (a != null) for (int j = 0; j < a.length(); j++) {
+                    String n = a.getJSONObject(j).optString("name");
+                    if ("checksums.txt".equals(n)) sums = true;
+                    else if (archive == null && wanted(p, n)) archive = n;
+                }
+                if (archive == null || !sums) {
+                    if (skipped == null) skipped = version;
+                    continue;
+                }
+                if (skipped != null) Stack.appLog(c, label(p) + " v" + skipped + " has no assets yet; using v" + version);
+                return verified(c, p, version, archive);
             }
+            throw new IOException("最近的 " + label(p) + " 版本都没有 linux arm64 安装包");
+        } catch (IOException e) {
+            apiErr = e;
         } catch (Exception e) {
-            // api.github.com is often unreachable or rate limited: read the tag from the release page redirect
-            HttpURLConnection h = Installer.open("https://github.com/" + repo(p) + "/releases/latest", 0);
-            h.setInstanceFollowRedirects(false);
-            try {
-                String loc = h.getHeaderField("Location");
-                if (loc != null && loc.contains("/tag/")) version = loc.substring(loc.lastIndexOf('/') + 1).replaceFirst("^v", "").trim();
-            } finally {
-                h.disconnect();
-            }
-            if (version == null) throw new IOException("查询 " + label(p) + " 最新版本失败：" + e.getMessage());
+            apiErr = new IOException(e.getMessage());
         }
-        if (archive == null) archive = guessArchive(p, version);
+        // api.github.com is often unreachable or rate limited: read the tag from the release page redirect
+        String version = null;
+        HttpURLConnection h = Installer.open("https://github.com/" + repo(p) + "/releases/latest", 0);
+        h.setInstanceFollowRedirects(false);
+        try {
+            String loc = h.getHeaderField("Location");
+            if (loc != null && loc.contains("/tag/")) version = loc.substring(loc.lastIndexOf('/') + 1).replaceFirst("^v", "").trim();
+        } finally {
+            h.disconnect();
+        }
+        if (version == null) throw new IOException("查询 " + label(p) + " 最新版本失败：" + apiErr.getMessage());
+        try {
+            return verified(c, p, version, guessArchive(p, version));
+        } catch (IOException e) {
+            if (e.getMessage() != null && e.getMessage().contains("HTTP 404"))
+                throw new IOException(label(p) + " v" + version + " 刚发布，安装包还在上传，过几分钟再检查");
+            throw e;
+        }
+    }
+
+    private static Release verified(Context c, Installer.Pkg p, String version, String archive) throws IOException {
         Release tmp = new Release(p, version, archive, "");
         String sums = new String(Installer.get(Installer.wrap(c, tmp.base() + "checksums.txt"), 1 << 20), "UTF-8");
         String sha = null;
