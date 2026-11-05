@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oh My CPA · 在 Android 上本地运行 CLIProxyAPI</title>
+<meta name="description" content="Oh My CPA：在 Android 手机本地运行 CLIProxyAPI 与 oh-my-cpa 管理控制台，免服务器、免 root。社区项目，与上游无关。">
+<meta name="theme-color" content="#1b1b1f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+(function(){try{
+  var t=localStorage.getItem('omc-theme')||'auto';
+  var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark',d);
+  var q=new URLSearchParams(location.search).get('lang');
+  var l=q||localStorage.getItem('omc-lang')||((navigator.language||'zh').toLowerCase().indexOf('zh')===0?'zh':'en');
+  if(l!=='en')l='zh';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='en'?'en':'zh-CN';
+}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip" href="#main"><span lang="zh">跳到正文</span><span lang="en">Skip to content</span></a>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./" aria-label="Oh My CPA">
+      <svg class="mark" viewBox="2 2 60 60" aria-hidden="true"><path class="ink" d="M 13 2 H 51 A 11 11 0 0 1 62 13 V 30 H 47 V 19 A 2 2 0 0 0 45 17 H 19 A 2 2 0 0 0 17 19 V 45 A 2 2 0 0 0 19 47 H 26 V 62 H 13 A 11 11 0 0 1 2 51 V 13 A 11 11 0 0 1 13 2 Z"/><path class="acc" d="M 47 36 H 62 V 51 A 11 11 0 0 1 51 62 H 32 V 47 H 45 A 2 2 0 0 0 47 45 Z"/></svg>
+      <span>Oh My CPA</span>
+    </a>
+    <nav class="menu" aria-label="Main">
+      <a href="#features"><span lang="zh">功能</span><span lang="en">Features</span></a>
+      <a href="#how"><span lang="zh">原理</span><span lang="en">How it works</span></a>
+      <a href="#install"><span lang="zh">安装</span><span lang="en">Install</span></a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="tools">
+      <button class="tool" id="langBtn" type="button" aria-label="Switch language"><span lang="zh">EN</span><span lang="en">中文</span></button>
+      <button class="tool" id="themeBtn" type="button" aria-label="Toggle dark mode">
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a class="tool" href="https://github.com/Taocrypt/oh-my-cpa-android" aria-label="GitHub">
+        <svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-main">
+      <p class="eyebrow"><span lang="zh">Android · arm64 · v0.4.0</span><span lang="en">Android · arm64 · v0.4.0</span></p>
+      <h1><span class="name">Oh My CPA</span></h1>
+      <p class="text"><span lang="zh">把 CLIProxyAPI 装进口袋</span><span lang="en">CLIProxyAPI in your pocket</span></p>
+      <p class="tagline">
+        <span lang="zh">在手机本地运行 <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a> 和 <a href="https://github.com/WizisCool/oh-my-cpa">oh-my-cpa</a> 管理控制台。无需服务器，无需 root，打开即用。</span>
+        <span lang="en">Run <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a> and the <a href="https://github.com/WizisCool/oh-my-cpa">oh-my-cpa</a> console locally on your phone. No server, no root — open and go.</span>
+      </p>
+      <div class="actions">
+        <a class="btn brand" href="https://github.com/Taocrypt/oh-my-cpa-android/releases/latest">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+          <span lang="zh">下载 APK</span><span lang="en">Download APK</span>
+        </a>
+        <a class="btn alt" href="#install"><span lang="zh">安装说明</span><span lang="en">How to install</span></a>
+        <a class="btn alt" href="https://github.com/Taocrypt/oh-my-cpa-android">GitHub</a>
+      </div>
+      <p class="fine"><span lang="zh">社区项目，与 CLIProxyAPI、oh-my-cpa 作者无关 · MIT</span><span lang="en">Community project, not affiliated with CLIProxyAPI or oh-my-cpa · MIT</span></p>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="glow"></div>
+      <div class="phone">
+        <div class="screen omc">
+          <div class="sbar"><span>9:41</span><span class="sicons"><i></i><i></i><i></i></span></div>
+          <div class="o-head"><span class="burger"><i></i><i></i><i></i></span><b>Oh-My-CPA</b><span class="o-pill">v8</span></div>
+          <div class="o-body">
+            <div class="o-cap">概览 · 今日</div>
+            <div class="o-stats">
+              <div class="o-card"><small>请求</small><b>1,284</b></div>
+              <div class="o-card"><small>Tokens</small><b>3.2M</b></div>
+              <div class="o-card"><small>成功率</small><b class="ok">99.6%</b></div>
+              <div class="o-card"><small>TTFT</small><b>612ms</b></div>
+            </div>
+            <div class="o-card o-chart">
+              <small>请求趋势</small>
+              <div class="bars"><i style="--h:34%"></i><i style="--h:52%"></i><i style="--h:40%"></i><i style="--h:66%"></i><i style="--h:58%"></i><i style="--h:80%"></i><i style="--h:72%"></i><i style="--h:90%"></i><i style="--h:64%"></i><i style="--h:76%"></i></div>
+            </div>
+            <div class="o-card o-list">
+              <div class="row"><span class="dot g"></span><span>codex · gpt</span><em>200</em></div>
+              <div class="row"><span class="dot g"></span><span>claude · sonnet</span><em>200</em></div>
+              <div class="row"><span class="dot a"></span><span>gemini · flash</span><em>429</em></div>
+            </div>
+          </div>
+          <div class="fab"><svg viewBox="2 2 60 60"><path class="ink" d="M 13 2 H 51 A 11 11 0 0 1 62 13 V 30 H 47 V 19 A 2 2 0 0 0 45 17 H 19 A 2 2 0 0 0 17 19 V 45 A 2 2 0 0 0 19 47 H 26 V 62 H 13 A 11 11 0 0 1 2 51 V 13 A 11 11 0 0 1 13 2 Z"/><path class="acc" d="M 47 36 H 62 V 51 A 11 11 0 0 1 51 62 H 32 V 47 H 45 A 2 2 0 0 0 47 45 Z"/></svg><span class="sdot"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container">
+    <h2 class="h2"><span lang="zh">功能</span><span lang="en">Features</span></h2>
+    <p class="lead"><span lang="zh">控制台是 oh-my-cpa 本身；外壳补上手机上真正需要的原生能力。</span><span lang="en">The console is oh-my-cpa itself; the shell adds what a phone actually needs.</span></p>
+    <div class="grid">
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><h3><span lang="zh">首次启动自动部署</span><span lang="en">Set up on first launch</span></h3><p><span lang="zh">从 GitHub Releases 下载官方 linux arm64 二进制，固定 SHA-256 校验，断点续传；可设下载镜像。</span><span lang="en">Downloads the official linux arm64 binaries from GitHub Releases with pinned SHA-256 checks and resume; optional mirror.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v6"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></div><h3><span lang="zh">后台常驻</span><span lang="en">Stays running</span></h3><p><span lang="zh">前台服务托管两个进程，异常自动退避重启；支持忽略电池优化和开机自启。</span><span lang="en">A foreground service supervises both processes with back-off restarts; battery exemption and start on boot.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg></div><h3><span lang="zh">Go DNS 兼容 + 自动登录</span><span lang="en">DNS fix + auto-login</span></h3><p><span lang="zh">内置 DNS 代理，解决 Go 程序在 Android 上无法解析域名；管理密钥自动生成并填入。</span><span lang="en">A built-in DNS proxy lets Go resolve names on Android; the management key is generated and filled in for you.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></div><h3><span lang="zh">原生面板</span><span lang="en">Native panel</span></h3><p><span lang="zh">可拖动的状态按钮，点开从右侧滑入的面板，配色实时跟随控制台主题。</span><span lang="en">A draggable status button opens a right-hand panel that follows the console's live theme.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h11a2 2 0 0 0 2-2V8"/></svg></div><h3><span lang="zh">悬浮窗 · 气泡 · 磁贴</span><span lang="en">Float window · bubble · tile</span></h3><p><span lang="zh">控制台小窗悬浮在其他应用之上，可缩放、调透明度、收成贴边气泡；快捷设置磁贴一键打开。</span><span lang="en">Keep the console floating over other apps, resize it, fade it, tuck it into an edge bubble; Quick Settings tile.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h13l-4-4"/><path d="M17 17H4l4 4"/></svg></div><h3><span lang="zh">局域网 &amp; 远程访问</span><span lang="en">LAN &amp; remote access</span></h3><p><span lang="zh">一键监听 0.0.0.0（可选 mDNS）；Cloudflare Quick Tunnel 或 Tailscale 从任何地方访问。</span><span lang="en">One switch to listen on 0.0.0.0 (optional mDNS); reach it anywhere via Cloudflare quick tunnel or Tailscale.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4M15 2v4"/><rect x="6" y="6" width="12" height="7" rx="2"/><path d="M12 13v4a3 3 0 0 1-3 3H7"/></svg></div><h3><span lang="zh">插件模式</span><span lang="en">Plugin mode</span></h3><p><span lang="zh">跟随控制台「启用插件系统」：自动换用 CPA 插件版，经内置 Termux glibc 加载器运行；插件页自动获得管理密钥。</span><span lang="en">Follows the console's plugin switch: runs CPA's glibc plugin build via a bundled Termux glibc loader; plugin pages get the key.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div><h3><span lang="zh">更新与空间管理</span><span lang="en">Updates &amp; storage</span></h3><p><span lang="zh">组件更新可回滚，外壳从 Releases 自更新并在通知栏显示进度；空间管理清理旧版本与日志。</span><span lang="en">Component updates with rollback, shell self-update from Releases with notification progress, and a storage manager.</span></p></article>
+      <article class="box"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><h3><span lang="zh">日志与诊断</span><span lang="en">Logs &amp; diagnostics</span></h3><p><span lang="zh">分标签查看各进程与崩溃日志，分享时自动脱敏密钥，一键导出诊断包。</span><span lang="en">Per-process and crash logs, key-redacted sharing, and a one-tap diagnostics bundle.</span></p></article>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="section alt" id="how">
+  <div class="container">
+    <h2 class="h2"><span lang="zh">工作原理</span><span lang="en">How it works</span></h2>
+    <p class="lead"><span lang="zh">两个上游程序原样运行在手机上，外壳只负责托管、连接与展示。</span><span lang="en">Both upstream programs run unmodified on the phone; the shell supervises, connects and displays them.</span></p>
+    <div class="flow">
+      <div class="node client">
+        <small><span lang="zh">你的 AI 客户端</span><span lang="en">Your AI clients</span></small>
+        <b>Claude Code · Codex · SDK</b>
+        <code>http://127.0.0.1:8317/v1</code>
+      </div>
+      <div class="arrow" aria-hidden="true"></div>
+      <div class="device">
+        <div class="device-cap"><span lang="zh">Android 手机 · Oh My CPA</span><span lang="en">Android phone · Oh My CPA</span></div>
+        <div class="procs">
+          <div class="node proc"><small>CLIProxyAPI v8</small><b>cli-proxy-api</b><code>127.0.0.1:8317</code></div>
+          <div class="link" aria-hidden="true"><span lang="zh">管理 API</span><span lang="en">management API</span></div>
+          <div class="node proc"><small>oh-my-cpa v0.3.19</small><b>oh-my-cpa</b><code>127.0.0.1:8080</code></div>
+        </div>
+        <div class="shell-row">
+          <span><span lang="zh">前台服务 · 进程守护</span><span lang="en">Foreground service · supervisor</span></span>
+          <span>DNS proxy</span>
+          <span><span lang="zh">全屏 WebView · 自动登录</span><span lang="en">Fullscreen WebView · auto-login</span></span>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true"></div>
+      <div class="node client">
+        <small><span lang="zh">可选</span><span lang="en">Optional</span></small>
+        <b><span lang="zh">局域网 / 远程</span><span lang="en">LAN / remote</span></b>
+        <code>0.0.0.0 · Cloudflare · Tailscale</code>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><span lang="zh">端口可在「应用设置」中修改；管理接口的远程管理（allow-remote）始终关闭。</span><span lang="en">Ports are configurable in App settings; CPA's remote management (allow-remote) stays off.</span></li>
+      <li><span lang="zh">应用 targetSdk 为 28，这是 Android 允许执行应用自行下载的二进制的前提。</span><span lang="en">targetSdk is 28 on purpose: it is what lets Android execute binaries the app downloaded itself.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- SCREENS -->
+<section class="section" id="screens">
+  <div class="container">
+    <h2 class="h2"><span lang="zh">界面一览</span><span lang="en">A look inside</span></h2>
+    <p class="lead"><span lang="zh">以下为 CSS 绘制的示意图，并非真实截图。</span><span lang="en">These are CSS illustrations, not real screenshots.</span></p>
+    <div class="shots">
+      <figure>
+        <div class="phone sm"><div class="screen omc setup">
+          <div class="sbar"><span>9:41</span><span class="sicons"><i></i><i></i><i></i></span></div>
+          <div class="s-center">
+            <svg class="s-mark" viewBox="2 2 60 60"><path class="ink" d="M 13 2 H 51 A 11 11 0 0 1 62 13 V 30 H 47 V 19 A 2 2 0 0 0 45 17 H 19 A 2 2 0 0 0 17 19 V 45 A 2 2 0 0 0 19 47 H 26 V 62 H 13 A 11 11 0 0 1 2 51 V 13 A 11 11 0 0 1 13 2 Z"/><path class="acc" d="M 47 36 H 62 V 51 A 11 11 0 0 1 51 62 H 32 V 47 H 45 A 2 2 0 0 0 47 45 Z"/></svg>
+            <b class="s-title">正在准备组件</b>
+            <div class="o-card s-card">
+              <small>下载 CLIProxyAPI 8.0.51</small>
+              <div class="prog"><i></i></div>
+              <small class="m">SHA-256 校验 · 62%</small>
+              <div class="sw-row"><span>使用下载镜像</span><span class="sw on"></span></div>
+            </div>
+          </div>
+        </div></div>
+        <figcaption><span lang="zh">首次启动：下载并校验</span><span lang="en">First launch: download &amp; verify</span></figcaption>
+      </figure>
+      <figure>
+        <div class="phone sm"><div class="screen omc">
+          <div class="sbar"><span>9:41</span><span class="sicons"><i></i><i></i><i></i></span></div>
+          <div class="o-head dim"><span class="burger"><i></i><i></i><i></i></span></div>
+          <div class="scrim"></div>
+          <div class="panel">
+            <div class="p-word">Oh-My-CPA</div>
+            <div class="p-cap">界面</div>
+            <div class="p-row">重新加载界面</div><div class="p-row">打开悬浮窗</div>
+            <div class="p-cap">服务</div>
+            <div class="p-row stat"><span class="dot g"></span>服务运行中</div><div class="p-row">重启服务</div>
+            <div class="p-cap">连接</div>
+            <div class="p-row sel">远程访问</div><div class="p-row">地址与复制</div>
+            <div class="p-cap">系统</div>
+            <div class="p-row">空间管理</div><div class="p-row">查看日志</div><div class="p-row">检查更新<span class="dot w"></span></div>
+          </div>
+        </div></div>
+        <figcaption><span lang="zh">原生面板：从右侧滑入</span><span lang="en">Native panel slides in from the right</span></figcaption>
+      </figure>
+      <figure>
+        <div class="phone sm"><div class="screen home">
+          <div class="sbar light"><span>9:41</span><span class="sicons"><i></i><i></i><i></i></span></div>
+          <div class="apps"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="floatwin omc">
+            <div class="fw-bar"><span></span><b>Oh-My-CPA</b><span class="fw-x"></span></div>
+            <div class="o-stats mini"><div class="o-card"><small>请求</small><b>1,284</b></div><div class="o-card"><small>成功率</small><b class="ok">99.6%</b></div></div>
+            <div class="bars mini"><i style="--h:40%"></i><i style="--h:62%"></i><i style="--h:50%"></i><i style="--h:78%"></i><i style="--h:66%"></i><i style="--h:88%"></i></div>
+            <span class="fw-grip"></span>
+          </div>
+          <div class="bubble"><svg viewBox="2 2 60 60"><path class="ink" d="M 13 2 H 51 A 11 11 0 0 1 62 13 V 30 H 47 V 19 A 2 2 0 0 0 45 17 H 19 A 2 2 0 0 0 17 19 V 45 A 2 2 0 0 0 19 47 H 26 V 62 H 13 A 11 11 0 0 1 2 51 V 13 A 11 11 0 0 1 13 2 Z"/><path class="acc" d="M 47 36 H 62 V 51 A 11 11 0 0 1 51 62 H 32 V 47 H 45 A 2 2 0 0 0 47 45 Z"/></svg></div>
+        </div></div>
+        <figcaption><span lang="zh">悬浮窗与贴边气泡</span><span lang="en">Floating window and edge bubble</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="section alt" id="install">
+  <div class="container narrow">
+    <h2 class="h2"><span lang="zh">安装</span><span lang="en">Install</span></h2>
+    <p class="lead"><span lang="zh">需要 Android 10（API 29）或更高的 arm64 设备。</span><span lang="en">Requires an arm64 device on Android 10 (API 29) or later.</span></p>
+    <ol class="steps">
+      <li><b><span lang="zh">下载</span><span lang="en">Download</span></b><p><span lang="zh">在 <a href="https://github.com/Taocrypt/oh-my-cpa-android/releases/latest">Releases</a> 下载最新的 <code>oh-my-cpa-&lt;版本&gt;.apk</code>。</span><span lang="en">Get the latest <code>oh-my-cpa-&lt;version&gt;.apk</code> from <a href="https://github.com/Taocrypt/oh-my-cpa-android/releases/latest">Releases</a>.</span></p></li>
+      <li><b><span lang="zh">安装</span><span lang="en">Install</span></b><p><span lang="zh">允许浏览器或文件管理器「安装未知来源应用」，然后安装。</span><span lang="en">Allow your browser or file manager to install unknown apps, then install it.</span></p></li>
+      <li><b><span lang="zh">首次启动</span><span lang="en">First launch</span></b><p><span lang="zh">等待下载并校验 CPA 与 oh-my-cpa；访问 GitHub 慢时打开「使用下载镜像」。</span><span lang="en">Wait while CPA and oh-my-cpa download and verify; turn on the download mirror if GitHub is slow.</span></p></li>
+      <li><b><span lang="zh">保持运行</span><span lang="en">Keep it running</span></b><p><span lang="zh">允许通知；在面板 → 应用设置中「忽略电池优化」，必要时开启开机自启。</span><span lang="en">Allow notifications; in Panel → App settings, exempt the app from battery optimisation and optionally start on boot.</span></p></li>
+      <li><b><span lang="zh">开始使用</span><span lang="en">Use it</span></b><p><span lang="zh">在控制台添加账号或 API Key，客户端 Base URL 填 <code>http://127.0.0.1:8317/v1</code>（局域网使用手机 IP）。</span><span lang="en">Add accounts or API keys in the console and point clients at <code>http://127.0.0.1:8317/v1</code> (or the phone's IP on your LAN).</span></p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container narrow">
+    <h2 class="h2">FAQ</h2>
+    <details>
+      <summary><span lang="zh">为什么首次启动还要下载？</span><span lang="en">Why does it download things on first launch?</span></summary>
+      <p><span lang="zh">CPA 与 oh-my-cpa 二进制直接来自上游官方 Releases（版本固定、SHA-256 校验），APK 只包含外壳，因此体积小，上游更新也不必等外壳发版。下载失败可打开镜像后重试。</span><span lang="en">The CPA and oh-my-cpa binaries come straight from the official upstream Releases (pinned versions, SHA-256 checked). The APK is only the shell, so it stays small and upstream updates don't wait for a new shell release. If a download fails, enable the mirror and retry.</span></p>
+    </details>
+    <details>
+      <summary><span lang="zh">需要哪些权限？</span><span lang="en">What permissions does it need?</span></summary>
+      <p><span lang="zh">网络（本地服务与下载）、前台服务与通知（后台常驻与状态）、唤醒锁与忽略电池优化（可选）、开机启动（可选，默认关闭）、悬浮窗（仅在你使用悬浮窗时）、本地网络（局域网与 mDNS）、安装未知应用（仅用于外壳自更新）。应用不含任何统计或追踪 SDK。</span><span lang="en">Network (local services and downloads), foreground service and notifications (staying alive, status), wake lock and battery exemption (optional), boot start (optional, off by default), draw over apps (only for the floating window), local network (LAN and mDNS), and install unknown apps (only for shell self-update). There are no analytics or tracking SDKs.</span></p>
+    </details>
+    <details>
+      <summary><span lang="zh">熄屏后 API 不通 / 服务被杀？</span><span lang="en">The API stops when the screen is off?</span></summary>
+      <p><span lang="zh">在面板 → 应用设置中「忽略电池优化」。部分国产系统还需在系统设置里允许自启动与后台运行，并在多任务界面锁定应用。</span><span lang="en">Exempt the app from battery optimisation in Panel → App settings. Some vendor ROMs also need auto-start / background permission in system settings and the app locked in recents.</span></p>
+    </details>
+    <details>
+      <summary><span lang="zh">数据存在哪里？</span><span lang="en">Where is my data stored?</span></summary>
+      <p><span lang="zh">凭据、配置与数据库都在应用私有目录，不会被上传。开启局域网或远程访问前，请为 CPA 设置 API Key，并只在可信网络中使用。</span><span lang="en">Credentials, config and databases stay in the app's private storage and are never uploaded. Before enabling LAN or remote access, set API keys in CPA and use trusted networks only.</span></p>
+    </details>
+    <details>
+      <summary><span lang="zh">这是官方应用吗？</span><span lang="en">Is this an official app?</span></summary>
+      <p><span lang="zh">不是。Oh My CPA 是社区项目，与 CLIProxyAPI 和 oh-my-cpa 的作者没有从属关系。外壳的问题请在本仓库反馈。</span><span lang="en">No. Oh My CPA is a community project and is not affiliated with the CLIProxyAPI or oh-my-cpa authors. Please report shell issues in this repository.</span></p>
+    </details>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <nav class="f-links">
+      <a href="https://github.com/Taocrypt/oh-my-cpa-android"><span lang="zh">源码仓库</span><span lang="en">Repository</span></a>
+      <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a>
+      <a href="https://help.router-for.me/"><span lang="zh">CPA 文档</span><span lang="en">CPA docs</span></a>
+      <a href="https://github.com/WizisCool/oh-my-cpa">oh-my-cpa</a>
+      <a href="https://github.com/Taocrypt/oh-my-cpa-android/blob/main/LICENSE"><span lang="zh">许可证</span><span lang="en">License</span></a>
+      <a href="https://github.com/Taocrypt/oh-my-cpa-android/blob/main/NOTICE.md"><span lang="zh">第三方声明</span><span lang="en">Notices</span></a>
+    </nav>
+    <p class="message"><span lang="zh">以 MIT 许可证发布。社区项目，与上游作者无关。</span><span lang="en">Released under the MIT License. Community project, not affiliated with upstream.</span></p>
+    <p class="copyright">Copyright © 2026 Taocrypt</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var d=!root.classList.contains('dark');root.classList.toggle('dark',d);
+    try{localStorage.setItem('omc-theme',d?'dark':'light')}catch(e){}
+  });
+  document.getElementById('langBtn').addEventListener('click',function(){
+    var l=root.getAttribute('data-lang')==='en'?'zh':'en';
+    root.setAttribute('data-lang',l);root.lang=l==='en'?'en':'zh-CN';
+    try{localStorage.setItem('omc-lang',l)}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

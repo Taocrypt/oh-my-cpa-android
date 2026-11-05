@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Oh My CPA</string>
+    <string name="tile_float">Oh My CPA</string>
+    <string name="shortcut_float">打开悬浮窗</string>
+    <string name="shortcut_restart">重启服务</string>
+    <string name="shortcut_log">查看日志</string>
+</resources>

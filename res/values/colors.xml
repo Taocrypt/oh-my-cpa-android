@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- OMC Dark, the console's shipped palette (web/src/index.css :root). The live palette is applied in code. -->
+    <color name="omc_bg">#FF121214</color>
+    <color name="omc_accent">#FF00A2FB</color>
+    <color name="launcher_bg">#FF121214</color>
+</resources>
