@@ -2,8 +2,8 @@
 # Builds and signs Oh My CPA. Output: build/oh-my-cpa-<version>.apk
 # Proposed parametrised version for the public repo: no machine paths, no password.
 set -e
-VERSION_NAME=${VERSION_NAME:-0.4.5}
-VERSION_CODE=${VERSION_CODE:-11}
+VERSION_NAME=${VERSION_NAME:-0.4.6}
+VERSION_CODE=${VERSION_CODE:-12}
 
 : "${ANDROID_HOME:=${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
 BUILD_TOOLS=${BUILD_TOOLS:-$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)}

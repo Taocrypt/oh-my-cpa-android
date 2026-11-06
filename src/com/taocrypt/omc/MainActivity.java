@@ -78,7 +78,7 @@ public final class MainActivity extends Activity {
     public static final String ACTION_UPDATES = "com.taocrypt.omc.UPDATES";
     public static final String ACTION_SHELL_INSTALL = "com.taocrypt.omc.SHELL_INSTALL";
     public static final String EXTRA_APK = "apk";
-    static final String APP_VERSION = "0.4.5";
+    static final String APP_VERSION = "0.4.6";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService bg = Executors.newCachedThreadPool();
@@ -203,6 +203,7 @@ public final class MainActivity extends Activity {
     @Override
     public void onConfigurationChanged(Configuration c) {
         super.onConfigurationChanged(c);
+        if (web != null) web.evaluateJavascript(SchemeShim.js(SchemeShim.systemDark(this)), null);
         if (panelOpen) {
             panel.getLayoutParams().width = panelWidth(page != null);
             panel.requestLayout();
@@ -581,6 +582,11 @@ public final class MainActivity extends Activity {
                 if ("127.0.0.1".equals(host) || "localhost".equals(host)) return false;
                 openExternal(r.getUrl().toString());
                 return true;
+            }
+
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
+                return SchemeShim.intercept(MainActivity.this, r, Stack.consoleUrl(MainActivity.this));
             }
 
             @Override
