@@ -78,7 +78,7 @@ public final class MainActivity extends Activity {
     public static final String ACTION_UPDATES = "com.taocrypt.omc.UPDATES";
     public static final String ACTION_SHELL_INSTALL = "com.taocrypt.omc.SHELL_INSTALL";
     public static final String EXTRA_APK = "apk";
-    static final String APP_VERSION = "0.4.4";
+    static final String APP_VERSION = "0.4.5";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService bg = Executors.newCachedThreadPool();
@@ -131,6 +131,7 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         CrashLog.install(this);
+        Updater.onJobEnded = () -> { if (!Updater.anyRunning()) consoleWillRestart(); };
         pal = Palette.get(this);
         k = new Kit(this, pal);
         Window w = getWindow();
@@ -189,6 +190,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (Updater.onJobEnded != null) Updater.onJobEnded = null;
         polling = false;
         bg.shutdownNow();
         if (web != null) {
@@ -1722,70 +1724,73 @@ public final class MainActivity extends Activity {
                         }), null)));
             }
             c.addView(k.buttons(row.toArray(new View[0])));
+            // the update itself runs in Updater (not in this page), so a rebuilt page picks it back up
+            final boolean[] watching = {false};
+            final Runnable watch = new Runnable() {
+                @Override public void run() {
+                    Updater.Job j = Updater.job(p);
+                    if (j == null || !info.isAttachedToWindow() && watching[0]) { watching[0] = false; return; }
+                    watching[0] = true;
+                    if (j.running) {
+                        info.setText("正在更新到 v" + j.r.version + "\n" + j.line());
+                        install.setVisibility(View.VISIBLE);
+                        install.setText("更新中…");
+                        install.setEnabled(false);
+                        install.setAlpha(0.5f);
+                        for (View x : row) if (x != install) { x.setEnabled(false); x.setAlpha(0.5f); }
+                        ui.postDelayed(this, 400);
+                        return;
+                    }
+                    watching[0] = false;
+                    for (View x : row) { x.setEnabled(true); x.setAlpha(1f); }
+                    if (j.ok) {
+                        info.setText("已更新到 v" + j.r.version + "，"
+                                + (Updater.anyRunning() ? "等另一个内核更新完成后一起重启。" : "服务正在重启。"));
+                        install.setVisibility(View.GONE);
+                    } else {
+                        found[0] = j.r;
+                        info.setText("更新失败：" + j.error + "\nGitHub 慢可以在下面的「下载设置」里设置镜像。");
+                        install.setText("重试更新到 v" + j.r.version);
+                        install.setVisibility(View.VISIBLE);
+                    }
+                }
+            };
             install.setOnClickListener(v -> {
                 final Updater.Release r = found[0];
                 if (r == null) return;
-                k.confirm("更新到 v" + r.version + "？", Updater.label(p) + " v" + cur + " → v" + r.version
-                        + "\n\n下载 " + r.archive + "，校验通过后替换并重启两个服务，正在进行的请求会断开。旧版本保留可回退。", "下载并更新", false, () -> {
-                    install.setEnabled(false);
-                    install.setAlpha(0.5f);
-                    final boolean[] busy = {true};
-                    final String title = "正在更新内核 " + Updater.label(p) + " " + r.version;
-                    final String[] lastNote = {""};
-                    final Runnable prog = new Runnable() {
-                        @Override public void run() {
-                            if (!busy[0]) return;
-                            String s = Updater.stage;
-                            boolean dl = s.startsWith("下载");
-                            if (dl) s += "  " + (Installer.percent >= 0 ? Installer.percent + "%" : "") + "  " + Installer.detail;
-                            info.setText(s.isEmpty() ? "处理中…" : s);
-                            String note = Updater.stage + "|" + (dl ? Installer.percent : -1);
-                            if (!note.equals(lastNote[0])) {
-                                lastNote[0] = note;
-                                UpdateNotifier.progress(MainActivity.this, UpdateNotifier.ID_KERNEL, title,
-                                        Updater.stage.isEmpty() ? "准备下载" : Updater.stage, dl ? Installer.percent : -1);
-                            }
-                            ui.postDelayed(this, 400);
-                        }
-                    };
-                    prog.run();
-                    bg.execute(() -> {
-                        try {
-                            Updater.install(this, r);
-                            UpdateNotifier.finish(this, UpdateNotifier.ID_KERNEL, Updater.label(p) + " 已更新到 v" + r.version, "服务正在重启", null);
-                            ui.post(() -> {
-                                busy[0] = false;
-                                info.setText("已更新到 v" + r.version + "，正在重启服务。");
-                                Prefs.setUpdatesSeen(this, Prefs.updatesSeen(this).replace(p.name + "=" + r.version, "").replaceAll("^,|,$", "").replace(",,", ","));
-                                restartServices();
-                            });
-                        } catch (IOException e) {
-                            UpdateNotifier.finish(this, UpdateNotifier.ID_KERNEL, Updater.label(p) + " v" + r.version + " 更新失败",
-                                    e.getMessage() + "\n点按打开更新页重试", null);
-                            ui.post(() -> {
-                                busy[0] = false;
-                                info.setText("更新失败：" + e.getMessage() + "\nGitHub 慢可以在下面的「下载设置」里设置镜像。");
-                                install.setEnabled(true);
-                                install.setAlpha(1f);
-                            });
-                        }
-                    });
+                final String now = Prefs.installed(this, p.name);
+                k.confirm("更新到 v" + r.version + "？", Updater.label(p) + " v" + now + " → v" + r.version
+                        + "\n\n下载 " + r.archive + "，校验通过后替换并重启两个服务，正在进行的请求会断开。旧版本保留可回退。"
+                        + "\n\n可以离开这个页面，进度在通知栏。", "下载并更新", false, () -> {
+                    Updater.start(this, r);
+                    if (!watching[0]) watch.run();
                 }, null);
             });
             Runnable check = () -> {
-                info.setText("当前 v" + cur + " · 正在检查…");
+                Updater.Job j = Updater.job(p);
+                if (j != null && j.running) { if (!watching[0]) watch.run(); return; }
+                final String now = Prefs.installed(this, p.name);
+                info.setText("当前 v" + now + " · 正在检查…");
                 bg.execute(() -> {
                     try {
                         Updater.Release r = Updater.latest(this, p);
-                        boolean newer = Updater.newer(r.version, cur);
+                        boolean newer = Updater.newer(r.version, now);
                         ui.post(() -> {
+                            Updater.Job j2 = Updater.job(p);
+                            if (j2 != null && j2.running) return; // an update started meanwhile; watch shows it
                             found[0] = r;
-                            info.setText("当前 v" + cur + " · 最新 v" + r.version + "\n" + (newer ? "有新版本可以更新。" : "已经是最新版本。"));
+                            info.setText("当前 v" + now + " · 最新 v" + r.version + "\n" + (newer ? "有新版本可以更新。" : "已经是最新版本。"));
                             install.setText("更新到 v" + r.version);
+                            install.setEnabled(true);
+                            install.setAlpha(1f);
                             install.setVisibility(newer ? View.VISIBLE : View.GONE);
                         });
                     } catch (IOException e) {
-                        ui.post(() -> info.setText("当前 v" + cur + "\n检查失败：" + e.getMessage()));
+                        ui.post(() -> {
+                            Updater.Job j2 = Updater.job(p);
+                            if (j2 != null && j2.running) return;
+                            info.setText("当前 v" + now + "\n检查失败：" + e.getMessage());
+                        });
                     }
                 });
             };
@@ -2229,6 +2234,15 @@ public final class MainActivity extends Activity {
     }
 
     // ================================================================== actions
+
+    /** the stack is about to restart: drop the console so it reloads (and logs in again) once it is back */
+    private void consoleWillRestart() {
+        webLoaded = false;
+        autoLoginTried = false;
+        if (web != null) web.setVisibility(View.INVISIBLE);
+        consoleUp = false;
+        Stack.problem = "";
+    }
 
     private void restartServices() {
         webLoaded = false;

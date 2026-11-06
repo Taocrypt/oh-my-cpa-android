@@ -71,7 +71,7 @@ final class Storage {
 
     /** true while something is downloading into files/dl or files/tmp */
     static boolean downloading() {
-        return !Updater.stage.isEmpty() || !Plugins.stage.isEmpty() || ShellUpdater.busy;
+        return Updater.anyRunning() || !Plugins.stage.isEmpty() || ShellUpdater.busy;
     }
 
     /** Every category with its size, largest first. Blocking: run off the main thread. */

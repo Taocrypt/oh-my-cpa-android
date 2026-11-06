@@ -18,6 +18,12 @@ final class UpdateNotifier {
     private static final String CHANNEL = "omc-update";
     static final int ID_SHELL = 2101;
     static final int ID_KERNEL = 2102;
+
+    /** one notification per kernel program, so two updates at once don't fight over one */
+    static int kernelId(Installer.Pkg p) {
+        for (int i = 0; i < Installer.ALL.length; i++) if (Installer.ALL[i] == p) return ID_KERNEL + i;
+        return ID_KERNEL;
+    }
     private static final String PREFS = "update-notifier";
     private static final String KEY_PENDING = "shellPending";
 

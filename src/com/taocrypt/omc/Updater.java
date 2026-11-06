@@ -128,39 +128,143 @@ final class Updater {
 
     static boolean canRollback(Context c, Installer.Pkg p) { return prev(c, p).isFile(); }
 
-    /** Download, verify, then swap the binary in (old one kept as .prev). Stops the stack; the caller restarts it. */
-    static void install(Context context, Release r) throws IOException {
-        Context c = context.getApplicationContext();
+    /**
+     * One kernel update in flight. It lives here, not in the update page, so the page can be
+     * rebuilt (onResume, theme change, navigating away) and still show the download, and so
+     * CPA and oh-my-cpa can update at the same time, each with its own progress and notification.
+     */
+    static final class Job {
+        final Release r;
+        final Installer.Progress pr = new Installer.Progress();
+        volatile String stage = "准备下载";
+        volatile boolean running = true, ok;
+        volatile String error = "";
+        volatile boolean swapped;
+        Job(Release r) { this.r = r; }
+
+        /** one line for the page: stage, and while downloading the percent and speed */
+        String line() {
+            String s = stage;
+            if (s.startsWith("下载")) s += "  " + (pr.percent >= 0 ? pr.percent + "%" : "") + "  " + pr.detail;
+            return s;
+        }
+    }
+
+    private static final java.util.Map<String, Job> JOBS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Object SWAP = new Object();
+    /** set by the activity while it is alive; told on the main thread when a job ends */
+    static volatile Runnable onJobEnded;
+
+    static Job job(Installer.Pkg p) { return JOBS.get(p.name); }
+
+    static boolean anyRunning() {
+        for (Job j : JOBS.values()) if (j.running) return true;
+        return false;
+    }
+
+    /** start updating r.pkg in the background (or return the job already running for it) */
+    static synchronized Job start(Context context, Release r) {
+        Job cur = JOBS.get(r.pkg.name);
+        if (cur != null && cur.running) return cur;
+        final Context c = context.getApplicationContext();
+        final Job j = new Job(r);
+        JOBS.put(r.pkg.name, j);
+        final int id = UpdateNotifier.kernelId(r.pkg);
+        final String title = "正在更新 " + label(r.pkg) + " " + r.version;
+        UpdateNotifier.progress(c, id, title, "准备下载", -1);
+        Thread notes = new Thread(() -> {
+            String last = "";
+            while (j.running) {
+                boolean dl = j.stage.startsWith("下载");
+                String key = j.stage + "|" + (dl ? j.pr.percent : -1);
+                if (!key.equals(last) && j.running) {
+                    last = key;
+                    UpdateNotifier.progress(c, id, title, j.stage, dl ? j.pr.percent : -1);
+                }
+                try { Thread.sleep(500); } catch (InterruptedException e) { return; }
+            }
+        }, "omc-upd-note-" + r.pkg.name);
+        notes.setDaemon(true);
+        new Thread(() -> {
+            try {
+                install(c, j);
+                j.ok = true;
+                Prefs.setUpdatesSeen(c, Prefs.updatesSeen(c).replace(r.pkg.name + "=" + r.version, "")
+                        .replaceAll("^,|,$", "").replace(",,", ","));
+            } catch (IOException | RuntimeException e) {
+                j.error = String.valueOf(e.getMessage());
+                Stack.appLog(c, "update " + r.pkg.name + " " + r.version + " failed: " + e);
+            }
+            boolean restart;
+            synchronized (Updater.class) {
+                j.running = false;
+                // restart once, when the last update in flight is done
+                restart = !anyRunning() && anySwapped();
+                if (restart) for (Job o : JOBS.values()) o.swapped = false;
+            }
+            notes.interrupt();
+            if (j.ok) {
+                UpdateNotifier.finish(c, id, label(r.pkg) + " 已更新到 v" + r.version,
+                        restart ? "服务正在重启" : "等另一个内核更新完成后一起重启", null);
+            } else {
+                UpdateNotifier.finish(c, id, label(r.pkg) + " v" + r.version + " 更新失败", j.error + "\n点按打开更新页重试", null);
+            }
+            if (restart) {
+                try {
+                    OmcService.restart(c);
+                } catch (RuntimeException e) {
+                    try { c.startService(new android.content.Intent(c, OmcService.class).setAction(OmcService.ACTION_RESTART)); }
+                    catch (RuntimeException ignored) { }
+                }
+            }
+            Runnable cb = onJobEnded;
+            if (cb != null) new android.os.Handler(android.os.Looper.getMainLooper()).post(cb);
+        }, "omc-upd-" + r.pkg.name).start();
+        notes.start();
+        return j;
+    }
+
+    private static boolean anySwapped() {
+        for (Job o : JOBS.values()) if (o.swapped) return true;
+        return false;
+    }
+
+    /** Download, verify, then swap the binary in (old one kept as .prev). The caller restarts the stack. */
+    private static void install(Context c, Job j) throws IOException {
+        Release r = j.r;
         String label = label(r.pkg) + " " + r.version;
         File part = new File(Stack.dir(c, "dl"), r.archive + ".part");
-        stage = "下载 " + label;
-        Installer.download(c, Installer.wrap(c, r.base() + r.archive), part);
-        stage = "校验 SHA-256";
+        j.stage = "下载 " + label;
+        Installer.download(c, Installer.wrap(c, r.base() + r.archive), part, j.pr);
+        j.stage = "校验 SHA-256";
         String got = Installer.sha256(part);
         if (!got.equals(r.sha256)) {
             part.delete();
             throw new IOException(r.archive + " 校验失败，已删除");
         }
-        stage = "解压";
+        j.stage = "解压";
         File out = Installer.bin(c, r.pkg);
         File fresh = new File(out.getParentFile(), r.pkg.name + ".new");
         Installer.extract(part, r.pkg.member, fresh);
         part.delete();
         if (!fresh.setExecutable(true, false)) Stack.appLog(c, "chmod +x failed for " + fresh);
-        stage = "替换并重启";
-        String cur = Prefs.installed(c, r.pkg.name);
-        Stack.stop(c);
-        File old = prev(c, r.pkg);
-        old.delete();
-        if (out.isFile() && !out.renameTo(old)) throw new IOException("无法保留旧版本");
-        if (!fresh.renameTo(out)) {
-            old.renameTo(out);
-            throw new IOException("无法写入 " + out);
+        j.stage = "替换";
+        synchronized (SWAP) {
+            String cur = Prefs.installed(c, r.pkg.name);
+            // renaming over a running binary is fine on Linux; the restart afterwards picks up the new one
+            File old = prev(c, r.pkg);
+            old.delete();
+            if (out.isFile() && !out.renameTo(old)) throw new IOException("无法保留旧版本");
+            if (!fresh.renameTo(out)) {
+                old.renameTo(out);
+                throw new IOException("无法写入 " + out);
+            }
+            Prefs.setPrevVersion(c, r.pkg.name, cur);
+            Prefs.setInstalled(c, r.pkg.name, r.version);
+            j.swapped = true;
+            Stack.appLog(c, "updated " + r.pkg.name + " " + cur + " -> " + r.version + " (previous kept for rollback)");
         }
-        Prefs.setPrevVersion(c, r.pkg.name, cur);
-        Prefs.setInstalled(c, r.pkg.name, r.version);
-        Stack.appLog(c, "updated " + r.pkg.name + " " + cur + " -> " + r.version + " (previous kept for rollback)");
-        stage = "";
+        j.stage = "重启服务";
     }
 
     /** Swap the .prev binary back. Stops the stack; the caller restarts it. Returns the version now installed or null. */

@@ -197,7 +197,17 @@ public final class Installer {
         }
     }
 
+    /** progress of one download, so two can run at once without sharing the static fields */
+    static final class Progress {
+        volatile int percent = -1;
+        volatile String detail = "";
+    }
+
     static void download(Context c, String url, File part) throws IOException {
+        download(c, url, part, null);
+    }
+
+    static void download(Context c, String url, File part, Progress pr) throws IOException {
         IOException last = null;
         for (int attempt = 1; attempt <= 3; attempt++) {
             long have = part.isFile() ? part.length() : 0;
@@ -224,20 +234,22 @@ public final class Installer {
                         long now = System.currentTimeMillis();
                         if (now - last0 > 250) {
                             last0 = now;
-                            percent = total > 0 ? (int) (done * 100 / total) : -1;
+                            int pc = total > 0 ? (int) (done * 100 / total) : -1;
                             double secs = Math.max(0.5, (now - t0) / 1000.0);
-                            detail = mb(done) + (total > 0 ? " / " + mb(total) : "") + "  ·  "
+                            String dt = mb(done) + (total > 0 ? " / " + mb(total) : "") + "  ·  "
                                     + String.format(Locale.US, "%.1f MB/s", (done - have) / secs / 1048576.0);
+                            if (pr != null) { pr.percent = pc; pr.detail = dt; } else { percent = pc; detail = dt; }
                         }
                     }
                 }
                 if (total > 0 && done < total) throw new IOException("下载中断（" + mb(done) + " / " + mb(total) + "）");
-                percent = 100;
+                if (pr != null) pr.percent = 100; else percent = 100;
                 return;
             } catch (IOException e) {
                 last = e;
                 Stack.appLog(c, "download attempt " + attempt + " failed: " + e);
-                detail = "网络中断，正在续传（第 " + attempt + " 次）…";
+                String dt = "网络中断，正在续传（第 " + attempt + " 次）…";
+                if (pr != null) pr.detail = dt; else detail = dt;
                 try { Thread.sleep(2000L * attempt); } catch (InterruptedException ie) { throw new IOException("interrupted"); }
             } finally {
                 h.disconnect();
