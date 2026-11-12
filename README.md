@@ -22,7 +22,7 @@
 
 ## 这是什么
 
-**Oh My CPA**（包名 `com.taocrypt.omc`，当前版本 **0.4.0**）是一个 Android 外壳应用：
+**Oh My CPA**（包名 `com.taocrypt.omc`）是一个 Android 外壳应用：
 
 - 在手机上以子进程方式运行 **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)**（CPA，v8）——把 Codex、Claude Code、Gemini 等账号包装成 OpenAI / Gemini / Claude 兼容的 API；
 - 同时运行 **[oh-my-cpa](https://github.com/WizisCool/oh-my-cpa)**（v0.3.19）——基于 Ant Design 的 CPA 管理控制台，带请求记录与用量分析；
