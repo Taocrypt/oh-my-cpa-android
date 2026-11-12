@@ -165,7 +165,7 @@ CPA 与 oh-my-cpa 的二进制直接来自上游官方 Releases（版本固定�
 
 ## English
 
-**Oh My CPA** (`com.taocrypt.omc`, v0.4.0) is an Android app that runs [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) (v8) and the [oh-my-cpa](https://github.com/WizisCool/oh-my-cpa) management console (v0.3.19) **locally on your phone** as child processes, and shows the console in a fullscreen WebView. No server, no root.
+**Oh My CPA** (`com.taocrypt.omc`) is an Android app that runs [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) (v8) and the [oh-my-cpa](https://github.com/WizisCool/oh-my-cpa) management console (v0.3.19) **locally on your phone** as child processes, and shows the console in a fullscreen WebView. No server, no root.
 
 - **First launch** downloads the official linux arm64 binaries from GitHub Releases with pinned SHA-256 checks; an optional download mirror helps on slow networks.
 - **Always on**: foreground service with a process supervisor, DNS proxy for Go on Android, auto-login, boot start and battery-optimisation exemption.
